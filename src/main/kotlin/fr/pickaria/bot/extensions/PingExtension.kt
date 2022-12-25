@@ -7,7 +7,7 @@ import com.kotlindiscord.kord.extensions.extensions.publicSlashCommand
 import com.kotlindiscord.kord.extensions.types.respond
 
 class PingExtension: Extension() {
-    override val name = "test"
+    override val name = "ping"
 
     override suspend fun setup() {
         publicSlashCommand(::PingArguments) {

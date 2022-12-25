@@ -1,5 +1,5 @@
 [versions]
-kotlin = "1.7.20"  # Note: Plugin versions must be updated in the build.gradle.kts too
+kotlin = "1.7.22"  # Note: Plugin versions must be updated in the build.gradle.kts too
 
 kord-extensions = "1.5.2-RC1"
 kx-ser = "1.3.2"
