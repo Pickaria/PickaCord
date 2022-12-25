@@ -10,8 +10,6 @@ pluginManagement {
 
 rootProject.name = "PickaCord"
 
-enableFeaturePreview("VERSION_CATALOGS")
-
 dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
