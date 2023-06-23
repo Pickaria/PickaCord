@@ -3,14 +3,6 @@
 version = 3
 
 [[package]]
-name = "PickaCord"
-version = "0.1.0"
-dependencies = [
- "serenity",
- "tokio",
-]
-
-[[package]]
 name = "adler"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -515,6 +507,14 @@ name = "percent-encoding"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b2a4787296e9989611394c33f193f676704af1686e70b8f8033ab5ba9a35a94"
+
+[[package]]
+name = "pickacord"
+version = "0.1.0"
+dependencies = [
+ "serenity",
+ "tokio",
+]
 
 [[package]]
 name = "pin-project-lite"
