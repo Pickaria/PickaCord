@@ -17,7 +17,7 @@ dependencies {
 }
 
 dependencies {
-    implementation("dev.kord:kord-core:0.7.4")
+    implementation("dev.kord:kord-core:0.10.0")
 }
 
 tasks.test {
