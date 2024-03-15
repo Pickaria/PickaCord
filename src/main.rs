@@ -8,9 +8,19 @@ mod commands;
 struct Handler;
 
 #[allow(dead_code)]
-async fn delete_all_commands(ctx: Context) -> Result<(), Box<dyn Error>> {
+async fn delete_all_commands(ctx: &Context) -> Result<(), Box<dyn Error>> {
     for command in Command::get_global_commands(&ctx.http).await? {
-        Command::delete_global_command(&ctx.http, command.id).await?
+        Command::delete_global_command(&ctx.http, command.id).await?;
+        info!("Deleted global command {} commands!", command.name);
+    }
+
+    let id: u64 = 533362856297496596;
+    let guild_id = GuildId::new(id);
+    let guild = Guild::get(ctx, guild_id).await.unwrap();
+    let commands = guild.get_commands(ctx).await.unwrap();
+    for command in commands {
+        let _ = guild.delete_command(ctx, command.id).await;
+        info!("Deleted guild command {} commands!", command.name);
     }
 
     Ok(())
