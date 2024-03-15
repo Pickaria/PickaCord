@@ -1,15 +1,7 @@
-use std::env;
 use std::error::Error;
 
-use serenity::async_trait;
-use serenity::model::application::command::Command;
-use serenity::model::application::interaction::Interaction;
-use serenity::model::gateway::Ready;
-use serenity::model::guild::Guild;
-use serenity::model::guild::Member;
-use serenity::model::id::GuildId;
-use serenity::model::prelude::{Activity, User};
-use serenity::prelude::*;
+use serenity::all::*;
+use tracing::{error, info};
 
 mod commands;
 
@@ -17,8 +9,8 @@ struct Handler;
 
 #[allow(dead_code)]
 async fn delete_all_commands(ctx: Context) -> Result<(), Box<dyn Error>> {
-    for command in Command::get_global_application_commands(&ctx.http).await? {
-        Command::delete_global_application_command(&ctx.http, command.id).await?
+    for command in Command::get_global_commands(&ctx.http).await? {
+        Command::delete_global_command(&ctx.http, command.id).await?
     }
 
     Ok(())
@@ -29,60 +21,45 @@ impl EventHandler for Handler {
     async fn guild_member_addition(&self, ctx: Context, new_member: Member) {
         if let Ok(guild) = Guild::get(&ctx.http, new_member.guild_id).await {
             if let Some(system_channel) = guild.system_channel_id {
-                system_channel
-                    .send_message(&ctx.http, |m| {
-                        m.content(format!("{} a rejoint le serveur", new_member.mention()))
-                    })
-                    .await
-                    .unwrap();
+                let message = CreateMessage::new()
+                    .content(format!("{} a rejoint le serveur", new_member.mention()));
+                let _ = system_channel.send_message(&ctx.http, message).await;
             }
         }
     }
 
-    async fn guild_member_removal(&self, ctx: Context, guild_id: GuildId, kicked: User) {
+    async fn guild_member_removal(
+        &self,
+        ctx: Context,
+        guild_id: GuildId,
+        user: User,
+        _member_data_if_available: Option<Member>,
+    ) {
         if let Ok(guild) = Guild::get(&ctx.http, guild_id).await {
             if let Some(system_channel) = guild.system_channel_id {
-                system_channel
-                    .send_message(&ctx.http, |m| {
-                        m.content(format!("{} a quitté le serveur", kicked.mention()))
-                    })
-                    .await
-                    .unwrap();
+                let message = CreateMessage::new().content(format!(
+                    "{} a quitté le serveur",
+                    user.global_name.unwrap_or(user.name)
+                ));
+                let _ = system_channel.send_message(&ctx.http, message).await;
             }
         }
     }
 
     async fn ready(&self, ctx: Context, ready: Ready) {
-        println!("{} is connected!", ready.user.name);
-        ctx.set_activity(Activity::playing("Minecraft")).await;
+        info!("{} is connected!", ready.user.name);
+        let activity = ActivityData::playing("Minecraft");
+        ctx.set_activity(Some(activity));
 
-        let guild_id = GuildId(
-            env::var("GUILD_ID")
-                .expect("Expected GUILD_ID in environment")
-                .parse()
-                .expect("GUILD_ID must be an integer"),
-        );
-
-        let commands = GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
-            commands.create_application_command(|command| commands::ping::register(command));
-            commands.create_application_command(|command| commands::ip::register(command))
-        })
-        .await;
-
-        println!(
-            "I now have the following guild slash commands: {:#?}",
-            commands
-        );
+        if let Err(err) = Command::create_global_command(&ctx.http, commands::ip::register()).await
+        {
+            error!("An error has occurred while registering a command: {err}")
+        }
     }
 
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
-        if let Interaction::ApplicationCommand(command) = interaction {
-            println!("Received command interaction: {:#?}", command);
-
+        if let Interaction::Command(command) = interaction {
             match command.data.name.as_str() {
-                "ping" => {
-                    commands::ping::run(&ctx, &command).await;
-                }
                 "ip" => {
                     commands::ip::run(&ctx, &command).await;
                 }
@@ -96,7 +73,12 @@ impl EventHandler for Handler {
 
 #[tokio::main]
 async fn main() {
-    let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
+    let token = std::env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
+
+    if std::env::var_os("RUST_LOG").is_none() {
+        std::env::set_var("RUST_LOG", "pickacord=debug");
+    }
+    tracing_subscriber::fmt::init();
 
     let intents = GatewayIntents::GUILD_MEMBERS;
 
@@ -106,6 +88,6 @@ async fn main() {
         .expect("Error creating client");
 
     if let Err(why) = client.start().await {
-        println!("Client error: {:?}", why);
+        error!("Client error: {:?}", why);
     }
 }
