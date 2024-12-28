@@ -65,11 +65,6 @@ impl EventHandler for Handler {
         {
             error!("An error has occurred while registering a command: {err}")
         }
-
-        if let Err(err) = Command::create_global_command(&ctx.http, commands::ask::register()).await
-        {
-            error!("An error has occurred while registering a command: {err}")
-        }
     }
 
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
@@ -77,9 +72,6 @@ impl EventHandler for Handler {
             match command.data.name.as_str() {
                 "ip" => {
                     commands::ip::run(&ctx, &command).await;
-                }
-                "ask" => {
-                    commands::ask::run(&ctx, &command).await;
                 }
                 _ => {
                     commands::not_found::run(&ctx, &command).await;
